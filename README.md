@@ -18,12 +18,32 @@ The server read first csv row as Column Name. Other rows as table rows data.
         Japan,Tokyo,31°C,32°C,33°C,30°C,29°C,28°C,28°C
         Canada,Ottawa,25°C,24°C,23°C,22°C,20°C,19°C,18°C
 
+### Table Column   
+
+![value](./readmeImg/03.png)
+
+### Table Data
+
+![value](./readmeImg/02.png)
+
+
 
 ## Type Timeseries  
 
 Only read the first row as datapoints.  
 
-![value](./readmeImg/01.png)
+### RawData  
+
+![value](./readmeImg/04.png)
+
+![value](./readmeImg/05.png)
+
+### Single value  
+
+![single value](./readmeImg/06.png)
+
+
+![value](./readmeImg/01.png)  
 
 ## Response sample  
 
