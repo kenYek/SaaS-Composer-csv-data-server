@@ -45,6 +45,13 @@ Only read the first row as datapoints.
 
 ![value](./readmeImg/01.png)  
 
+## Support read file from URL  
+
+You can use http or https as a file path.  
+
+![value](./readmeImg/07.png)  
+
+
 ## Response sample  
 
 

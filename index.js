@@ -3,6 +3,7 @@ var cors = require('cors')
 let config = require('./config.json');
 const fs = require('fs');
 const path = require('path');
+const axios = require('axios');
 
 var app = express();
 app.use(cors())
@@ -12,62 +13,69 @@ const port = config.port || 3500;
 
 async function getCsvData(req, res) {
   const data = req.body;
-  const jsonData = JSON.parse(data.jsondata)
+  const jsonData = JSON.parse(data.jsondata);
   const fileConfig = {
-    file: jsonData.filename || './csvFolder/example.csv'
-  }
+    file: jsonData.filename || './csvFolder/example.csv',
+  };
 
-  const r = {}
+  const r = {};
   r.errCode = 0;
   r.data = [];
 
   for (let c = 0; c < data.targets.length; c++) {
-    if (data.targets[c].type === 'table') {
-      // 使用await在async函式中進行非同步讀取檔案操作
-      const csvData = await fs.promises.readFile('./csvFolder/' + data.targets[c].target, 'utf8');
-      // 將CSV內容轉換成二維陣列
-      const csvDataRows = csvData.trim().split('\n').map(row => row.split(','));
-      const item = {}
-      item.target = data.targets[c].target
-      item.type = data.targets[c].type
-      item.columns = []
-      if (csvDataRows &&csvDataRows.length > 0) {
-        for (let i = 0; csvDataRows[0] && i < csvDataRows[0].length; i++) {
-          item.columns.push({
-            text: csvDataRows[0][i]
-          })
+    if (data.targets[c].type === 'table' || data.targets[c].type === 'timeseries') {
+      let csvData;
+      if (data.targets[c].target.startsWith('http')) {
+        try {
+          const response = await axios.get(data.targets[c].target);
+          csvData = response.data;
+        } catch (err) {
+          console.error('從URL中讀取檔案時出現錯誤：', err);
+          continue; // 若讀取失敗則跳過該目標
         }
-        csvDataRows.shift();
-        item.rows = csvDataRows;
+      } else {
+        try {
+          csvData = await fs.promises.readFile('./csvFolder/' + data.targets[c].target, 'utf8');
+        } catch (err) {
+          console.error('從檔案中讀取檔案時出現錯誤：', err);
+          continue; // 若讀取失敗則跳過該目標
+        }
       }
-      r.data.push(item)
-    }
-    if (data.targets[c].type === 'timeseries') {
-      // 使用await在async函式中進行非同步讀取檔案操作
-      const csvData = await fs.promises.readFile('./csvFolder/' + data.targets[c].target, 'utf8');
+
       // 將CSV內容轉換成二維陣列
       const csvDataRows = csvData.trim().split('\n').map(row => row.split(','));
-      const item = {}
-      item.target = data.targets[c].target
-      item.type = data.targets[c].type
-      item.datapoints = []
-      for (let i = 0; i < csvDataRows.length; i++) {
-        if (i === 0) {
-          for (let j = 0; j < csvDataRows[i].length; j++) {
-            item.datapoints.push([csvDataRows[i][j], j])
+
+      const item = {
+        target: data.targets[c].target,
+        type: data.targets[c].type,
+      };
+
+      if (data.targets[c].type === 'table') {
+        item.columns = [];
+        if (csvDataRows && csvDataRows.length > 0) {
+          for (let i = 0; csvDataRows[0] && i < csvDataRows[0].length; i++) {
+            item.columns.push({
+              text: csvDataRows[0][i],
+            });
+          }
+          csvDataRows.shift();
+          item.rows = csvDataRows;
+        }
+      } else if (data.targets[c].type === 'timeseries') {
+        item.datapoints = [];
+        for (let i = 0; i < csvDataRows.length; i++) {
+          if (i === 0) {
+            for (let j = 0; j < csvDataRows[i].length; j++) {
+              item.datapoints.push([csvDataRows[i][j], j]);
+            }
           }
         }
       }
-      // item.datapoints = csvDataRows;
-      r.data.push(item)
+
+      r.data.push(item);
     }
   }
 
-  
-  // 輸出CSV內容
-  // rows.forEach(row => {
-  //   console.log(row.join('\t'));
-  // });
   res.json(r.data);
   res.end();
 }
@@ -88,6 +96,7 @@ async function getCsvFiles(req, res) {
   res.end();
 }
 
+app.use('/file', express.static('csvFolder'));
 
 app.get('/', (req, res) => {
   res.send('Hello World!')
