@@ -2,6 +2,8 @@
 
 This example shows how to use ***SimplaeJson*** plugin to read csv files.  
 
+![value](./readmeImg/08.png)  
+
 ## Type Table  
 
 The server read first csv row as Column Name. Other rows as table rows data.  
